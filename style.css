@@ -1,0 +1,13 @@
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;font-family:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;background:#313338;color:#f2f3f5}
+button,input{font:inherit}button{cursor:pointer}
+.icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}.icon svg{width:100%;height:100%;display:block}
+.scrollbar-thin::-webkit-scrollbar{width:8px;height:8px}.scrollbar-thin::-webkit-scrollbar-track{background:transparent}.scrollbar-thin::-webkit-scrollbar-thumb{background:#1f2023;border-radius:8px}.scrollbar-thin::-webkit-scrollbar-thumb:hover{background:#4f545c}
+.art-card{background:#2b2d31;border:1px solid #1f2023;border-radius:14px;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.art-card:hover{transform:translateY(-3px);border-color:#4e5058;box-shadow:0 12px 28px rgba(0,0,0,.25)}
+.art-image-wrap,.no-image{aspect-ratio:16/10;background:#1e1f22;position:relative;overflow:hidden}.art-image{width:100%;height:100%;display:block;object-fit:cover;transition:transform .2s ease}.art-card:hover .art-image{transform:scale(1.035)}
+.art-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.18);opacity:0;transition:opacity .18s}.art-card:hover .art-overlay{opacity:1}
+.source-badge{position:absolute;left:8px;top:8px;padding:4px 7px;border-radius:6px;background:rgba(0,0,0,.72);color:#fff;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;z-index:2}
+.nav-btn.active{background:#35373c;color:#fff}.nav-btn.active .icon{color:#5865f2}
+.no-image{display:flex;align-items:center;justify-content:center;text-decoration:none}.no-image-inner{display:flex;flex-direction:column;align-items:center;gap:5px;color:#b5bac1;font-size:12px}.no-image-inner strong{color:#fff}.no-image-inner small{color:#72767d}
+.suggestion{border:1px solid #3b3d44;background:#2b2d31;color:#fff;border-radius:999px;padding:.45rem .8rem;font-size:.85rem;transition:.15s}.suggestion:hover{background:#5865f2;border-color:#5865f2}
+@media(max-width:700px){.server-rail{width:54px!important}.discover-sidebar{width:190px!important}.art-card{border-radius:11px}}
