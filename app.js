@@ -23,16 +23,20 @@
   const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const paintIcons = () => document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = ICONS[el.dataset.icon] || '');
 
-  function searchMatches(item, term) {
-    const hay = normalize([item.title, item.artist, ...(item.tags || []), item.note].join(' '));
-    return normalize(term).split(/\s+/).filter(Boolean).every(word => hay.includes(word));
+  function searchableText(item) {
+    return normalize([
+      item.title,
+      item.artist,
+      item.note,
+      ...(item.tags || [])
+    ].join(' '));
   }
 
-  function openLiveSearch(term) {
-    const q = (term || 'Clyde Discord').trim();
-    const url = new URL('https://www.newgrounds.com/search/conduct/art');
-    url.searchParams.set('q', q);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  function searchMatches(item, term) {
+    const query = normalize(term).split(/\s+/).filter(Boolean);
+    if (!query.length) return true;
+    const hay = searchableText(item);
+    return query.every(word => hay.includes(word));
   }
 
   function render(items, term = '') {
@@ -41,7 +45,7 @@
 
     items.forEach((item) => {
       const media = item.image
-        ? `<button class="art-image-wrap block w-full text-left" type="button">
+        ? `<button class="art-image-wrap block w-full text-left" type="button" aria-label="Preview ${escapeHtml(item.title)}">
              <img class="art-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)} by ${escapeHtml(item.artist)}" loading="lazy" referrerpolicy="no-referrer">
              <span class="source-badge">NEWGROUNDS</span>
              <span class="art-overlay"><span class="icon h-5 w-5 text-white" data-icon="eye"></span></span>
@@ -81,7 +85,7 @@
   function openLightbox(item) {
     $('lightbox-img').src = item.image;
     $('lightbox-img').alt = item.title;
-    $('lightbox-caption').innerHTML = `<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open on Newgrounds ↗</a>`;
+    $('lightbox-caption').innerHTML = `<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open source page ↗</a>`;
     $('lightbox').classList.remove('hidden');
     $('lightbox').classList.add('flex');
   }
@@ -93,14 +97,15 @@
   }
 
   function updateStatus(term = '') {
-    status.innerHTML = `Source: <strong>Newgrounds</strong>. Search the live art index <button id="live-search" class="underline text-white hover:text-[#d8ddff]" type="button">here ↗</button>.`;
-    $('live-search').onclick = () => openLiveSearch(term);
+    status.innerHTML = term
+      ? `Searching the verified Clyde index from <strong>Newgrounds</strong>.`
+      : `Source: <strong>Newgrounds</strong>. This page uses a curated index so results stay relevant to Clyde.`;
   }
 
   $('search-form').addEventListener('submit', (event) => {
     event.preventDefault();
     const term = input.value.trim();
-    const results = DATA.filter(item => !term || searchMatches(item, term));
+    const results = DATA.filter(item => searchMatches(item, term));
     render(results, term);
     updateStatus(term);
     if (!results.length) {
@@ -109,13 +114,17 @@
         input.value = btn.dataset.suggest;
         $('search-form').requestSubmit();
       }));
+    } else {
+      suggestions.innerHTML = '';
     }
   });
 
   clear.addEventListener('click', () => {
     input.value = '';
     status.textContent = '';
+    suggestions.innerHTML = '';
     render(DATA);
+    updateStatus();
   });
 
   document.querySelectorAll('[data-category]').forEach(btn => {
@@ -124,8 +133,7 @@
       btn.classList.add('active');
       const term = btn.dataset.category || '';
       input.value = term;
-      const results = DATA.filter(item => !term || searchMatches(item, term));
-      render(results, term);
+      render(DATA.filter(item => searchMatches(item, term)), term);
       updateStatus(term);
     });
   });
