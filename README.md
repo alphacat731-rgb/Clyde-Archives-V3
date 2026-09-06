@@ -1,12 +1,23 @@
-# Clyde Archives V2
+# Clyde Archives V4
 
-A static GitHub Pages gallery keeping the Discord/Base44-inspired UI, with **Newgrounds as the primary art source**.
+A static GitHub Pages gallery for Discord Clyde artwork with live multi-source searching.
+
+## Sources
+
+The live search is restricted to verified artwork hosts:
+
+- Newgrounds
+- DeviantArt
+- Fur Affinity (SFW)
+- Wallpapers.com
+
+Searches are sent through a CORS-friendly fetch layer and the resulting artwork pages are inspected for publicly exposed preview metadata. Results that do not expose a reliable image remain link-only.
 
 ## Important
 
-This version does **not** query Wikimedia Commons or Openverse.
+The archive does not use Wikimedia Commons or Openverse for artwork discovery.
 
-The archive ships with a small set of verified Newgrounds Clyde/Discord artworks and links to the live Newgrounds art search for broader searches.
+Fur Affinity results are restricted to its SFW subdomain. The archive does not attempt to bypass age gates, login requirements, or content restrictions.
 
 ## Files
 
@@ -14,19 +25,17 @@ The archive ships with a small set of verified Newgrounds Clyde/Discord artworks
 - `app.js`
 - `data.js`
 - `style.css`
+- `smart-previews.js`
+- `live-search.js`
 
 ## GitHub Pages
 
-Put these files in the repository root and enable:
+This V4 release is on the `V4` branch. In **Settings → Pages**, select:
 
-**Settings → Pages → Deploy from a branch → `main` → `/ (root)`**
+**Deploy from a branch → `V4` → `/ (root)`**
 
-Then open:
+The project can then be opened at the repository's normal GitHub Pages URL.
 
-`https://alphacat731-rgb.github.io/Clyde-Archives-V2/`
+## Search behavior
 
-## Source note
-
-Artwork remains hosted/credited on Newgrounds; the archive links back to the original artwork pages.
-
-The current seed set includes Newgrounds pages such as `Anthro Clyde`, `Discord furry lol`, and `Jay and Clyde`.
+Try searches such as `Clyde`, `Discord Clyde`, `furry Clyde`, or `Clyde fanart`. The search engine queries each verified source separately, removes duplicate pages, checks relevance, and attempts to obtain an image preview before displaying a result.
