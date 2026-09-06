@@ -7,7 +7,7 @@
     smile:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
     mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/></svg>',
     headphones:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 16v3a2 2 0 0 1-2 2h-2v-6h2a2 2 0 0 1 2 1zM3 16v3a2 2 0 0 0 2 2h2v-6H5a2 2 0 0 0-2 1z"/></svg>',
-    settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a1.7 1.7 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3l.1-.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>',
@@ -21,6 +21,7 @@
   let currentPage = 1;
   let activeResults = [...DATA];
   let activeTerm = '';
+  let activeSource = 'All Sources';
 
   const $ = id => document.getElementById(id);
   const input = $('search-input'), grid = $('art-grid'), title = $('section-title'), count = $('result-count');
@@ -32,67 +33,90 @@
   function searchMatches(item, term) {
     const q = normalize(term).split(/\s+/).filter(Boolean);
     if (!q.length) return true;
-    const hay = normalize([item.title,item.artist,item.note,...(item.tags||[])].join(' '));
+    const hay = normalize([item.title,item.artist,item.note,...(item.tags||[]),item.source].join(' '));
     return q.every(word => hay.includes(word));
   }
 
-  function renderPagination(total) {
-    const old = document.getElementById('pagination');
-    if (old) old.remove();
-    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    const nav = document.createElement('div');
-    nav.id='pagination'; nav.className='mt-8 flex flex-wrap items-center justify-center gap-2';
-    const button = (label, disabled, handler, icon='') => {
+  function applyFilters(){
+    activeResults = DATA.filter(item => (activeSource==='All Sources' || item.source===activeSource) && searchMatches(item, activeTerm));
+  }
+
+  function renderSourceFilters(){
+    let box = $('source-filters');
+    if(!box){
+      box=document.createElement('div');
+      box.id='source-filters';
+      box.className='mb-5 flex flex-wrap items-center justify-center gap-2';
+      grid.parentElement.insertBefore(box,grid);
+    }
+    const sources=['All Sources',...new Set(DATA.map(item=>item.source).filter(Boolean))];
+    box.innerHTML='';
+    sources.forEach(source=>{
+      const b=document.createElement('button'); b.type='button'; b.textContent=source;
+      b.className=`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-[#3b3d44] transition ${source===activeSource?'bg-[#5865f2] text-white':'bg-[#2b2d31] text-[#b5bac1] hover:bg-[#35373c] hover:text-white'}`;
+      b.onclick=()=>{activeSource=source;currentPage=1;applyFilters();renderPage();updateStatus(activeTerm);};
+      box.appendChild(b);
+    });
+  }
+
+  function renderPagination(total){
+    const nav=$('pagination'); if(!nav) return;
+    nav.innerHTML='';
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+    nav.classList.toggle('hidden',pages<=1);
+    if(pages<=1) return;
+    const button=(label,disabled,handler,icon='')=>{
       const b=document.createElement('button'); b.type='button'; b.disabled=disabled;
       b.className='h-9 min-w-9 px-3 rounded-full bg-[#2b2d31] text-[#dbdee1] ring-1 ring-[#3b3d44] hover:bg-[#35373c] disabled:opacity-35 disabled:cursor-not-allowed';
       b.innerHTML=icon?`<span class="icon w-4 h-4">${ICONS[icon]}</span>`:label; b.onclick=handler; nav.appendChild(b);
     };
     button('Prev',currentPage===1,()=>goPage(currentPage-1),'chevronLeft');
-    const start=Math.max(1,currentPage-2), end=Math.min(pages,start+4);
+    const start=Math.max(1,Math.min(currentPage-2,pages-4));
+    const end=Math.min(pages,start+4);
     for(let p=start;p<=end;p++){
       const b=document.createElement('button'); b.type='button'; b.textContent=p;
       b.className=`h-9 min-w-9 px-3 rounded-full ring-1 ring-[#3b3d44] ${p===currentPage?'bg-[#5865f2] text-white':'bg-[#2b2d31] text-[#dbdee1] hover:bg-[#35373c]'}`;
       b.onclick=()=>goPage(p); nav.appendChild(b);
     }
     button('Next',currentPage===pages,()=>goPage(currentPage+1),'chevronRight');
-    const wrap=document.querySelector('.px-4.sm\\:px-6.pb-16') || document.querySelector('main .px-4');
-    (wrap||grid.parentElement).appendChild(nav);
   }
 
-  function goPage(page){
-    currentPage=page; renderPage(); window.scrollTo({top:0,behavior:'smooth'});
-  }
+  function goPage(page){ currentPage=page; renderPage(); grid.scrollIntoView({behavior:'smooth',block:'start'}); }
 
   function renderPage(){
     grid.innerHTML='';
     const pages=Math.max(1,Math.ceil(activeResults.length/PAGE_SIZE));
-    currentPage=Math.min(currentPage,pages);
+    currentPage=Math.min(Math.max(currentPage,1),pages);
     const start=(currentPage-1)*PAGE_SIZE;
     const visible=activeResults.slice(start,start+PAGE_SIZE);
     empty.classList.toggle('hidden',activeResults.length!==0);
-    visible.forEach((item)=>{
+    visible.forEach(item=>{
+      const source=escapeHtml(item.source || 'Source');
       const media=item.image
-        ? `<button class="art-image-wrap block w-full text-left" type="button" aria-label="Preview ${escapeHtml(item.title)}"><img class="art-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)} by ${escapeHtml(item.artist)}" loading="lazy" referrerpolicy="no-referrer"><span class="source-badge">NEWGROUNDS</span><span class="art-overlay"><span class="icon h-5 w-5 text-white" data-icon="eye"></span></span></button>`
-        : `<a class="no-image" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer"><div class="no-image-inner"><span class="icon w-8 h-8 text-[#8ea1ff]" data-icon="external"></span><strong>Open artwork</strong><small>Newgrounds page</small></div><span class="source-badge">NEWGROUNDS</span></a>`;
+        ? `<button class="art-image-wrap block w-full text-left" type="button" aria-label="Preview ${escapeHtml(item.title)}"><img class="art-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)} by ${escapeHtml(item.artist)}" loading="lazy" referrerpolicy="no-referrer"><span class="source-badge">${source}</span><span class="art-overlay"><span class="icon h-5 w-5 text-white" data-icon="eye"></span></span></button>`
+        : `<a class="no-image" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer"><div class="no-image-inner"><span class="icon w-8 h-8 text-[#8ea1ff]" data-icon="external"></span><strong>Open artwork</strong><small>${source} page</small></div><span class="source-badge">${source}</span></a>`;
       const card=document.createElement('article'); card.className='art-card';
-      card.innerHTML=`${media}<div class="p-4"><h3 class="font-bold text-white text-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3><div class="text-xs text-[#b5bac1] mb-2 mt-1">by ${escapeHtml(item.artist)}</div><p class="text-xs text-[#949ba4] leading-5 mb-3">${escapeHtml(item.note)}</p><div class="flex flex-wrap gap-1.5 mb-3">${(item.tags||[]).map(t=>`<span class="bg-[#383a40] text-[10px] text-[#b5bac1] px-2 py-0.5 rounded">${escapeHtml(t)}</span>`).join('')}</div><a class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8ea1ff] hover:text-white" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">View on Newgrounds <span class="icon w-3.5 h-3.5" data-icon="external"></span></a></div>`;
+      card.innerHTML=`${media}<div class="p-4"><h3 class="font-bold text-white text-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3><div class="text-xs text-[#b5bac1] mb-2 mt-1">by ${escapeHtml(item.artist)}</div><p class="text-xs text-[#949ba4] leading-5 mb-3">${escapeHtml(item.note)}</p><div class="flex flex-wrap gap-1.5 mb-3">${(item.tags||[]).map(t=>`<span class="bg-[#383a40] text-[10px] text-[#b5bac1] px-2 py-0.5 rounded">${escapeHtml(t)}</span>`).join('')}</div><a class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8ea1ff] hover:text-white" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">View on ${source} <span class="icon w-3.5 h-3.5" data-icon="external"></span></a></div>`;
       if(item.image) card.querySelector('button').onclick=()=>openLightbox(item);
       grid.appendChild(card);
     });
-    title.textContent=activeTerm?`Clyde results for “${activeTerm}”`:'Verified Clyde artworks from Newgrounds';
+    const sourceLabel=activeSource==='All Sources'?'multiple sources':activeSource;
+    title.textContent=activeTerm?`Clyde results for “${activeTerm}”`:`Verified Clyde artwork from ${sourceLabel}`;
     count.textContent=`${activeResults.length} result${activeResults.length===1?'':'s'} · page ${currentPage} of ${pages}`;
     clear.classList.toggle('hidden',!activeTerm);
-    paintIcons(); renderPagination(activeResults.length);
+    paintIcons(); renderPagination(activeResults.length); renderSourceFilters();
   }
 
-  function openLightbox(item){$('lightbox-img').src=item.image;$('lightbox-img').alt=item.title;$('lightbox-caption').innerHTML=`<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open source page ↗</a>`;$('lightbox').classList.remove('hidden');$('lightbox').classList.add('flex');}
-  function closeLightbox(){$('lightbox').classList.add('hidden');$('lightbox').classList.remove('flex');$('lightbox-img').src='';}
-  function runSearch(term){activeTerm=term.trim();activeResults=DATA.filter(item=>searchMatches(item,activeTerm));currentPage=1;renderPage();updateStatus(activeTerm);if(!activeResults.length){suggestions.innerHTML=['furry Clyde','anthro Clyde','Clyde Discord','Clyde fanart'].map(s=>`<button class="suggestion" type="button" data-suggest="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');suggestions.querySelectorAll('[data-suggest]').forEach(b=>b.onclick=()=>{input.value=b.dataset.suggest;runSearch(b.dataset.suggest)});}else suggestions.innerHTML='';}
-  function updateStatus(term=''){status.innerHTML=term?`Searching the verified Clyde index from <strong>Newgrounds</strong>.`:`Source: <strong>Newgrounds</strong>. Mature-labeled artwork is not previewed here and remains on the original source page.`;}
+  function openLightbox(item){ $('lightbox-img').src=item.image; $('lightbox-img').alt=item.title; $('lightbox-caption').innerHTML=`<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open source page ↗</a>`; $('lightbox').classList.remove('hidden'); $('lightbox').classList.add('flex'); }
+  function closeLightbox(){ $('lightbox').classList.add('hidden'); $('lightbox').classList.remove('flex'); $('lightbox-img').src=''; }
+  function updateStatus(term=''){ status.innerHTML=term?`Searching the verified Clyde index across <strong>${escapeHtml(activeSource)}</strong>.`:`Verified image index using direct artwork previews where available; link-only entries open their original source page.`; }
+  function runSearch(term){ activeTerm=term.trim(); currentPage=1; applyFilters(); renderPage(); updateStatus(activeTerm); if(!activeResults.length){ suggestions.innerHTML=['Clyde','Discord Clyde','Clyde fanart','anthro Clyde'].map(s=>`<button class="suggestion" type="button" data-suggest="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(''); suggestions.querySelectorAll('[data-suggest]').forEach(b=>b.onclick=()=>{input.value=b.dataset.suggest;runSearch(b.dataset.suggest);}); } else suggestions.innerHTML=''; }
 
   $('search-form').addEventListener('submit',e=>{e.preventDefault();runSearch(input.value);});
-  clear.addEventListener('click',()=>{input.value='';activeTerm='';activeResults=[...DATA];currentPage=1;renderPage();updateStatus();});
+  clear.addEventListener('click',()=>{input.value='';activeTerm='';activeSource='All Sources';currentPage=1;applyFilters();renderPage();updateStatus();});
   document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');input.value=btn.dataset.category||'';runSearch(btn.dataset.category||'');}));
-  $('lightbox').addEventListener('click',e=>{if(e.target===$('lightbox'))closeLightbox();}); $('lightbox-close').addEventListener('click',closeLightbox); document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
-  paintIcons(); renderPage(); updateStatus();
+  $('lightbox').addEventListener('click',e=>{if(e.target===$('lightbox'))closeLightbox();});
+  $('lightbox-close').addEventListener('click',closeLightbox);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+  paintIcons(); applyFilters(); renderPage(); updateStatus();
 })();
