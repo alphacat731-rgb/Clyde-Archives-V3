@@ -11,142 +11,88 @@
     search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>',
-    external:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+    external:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    chevronLeft:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>',
+    chevronRight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>'
   };
 
   const DATA = (window.CLYDE_DATA && window.CLYDE_DATA.verified) || [];
-  const $ = (id) => document.getElementById(id);
+  const PAGE_SIZE = 6;
+  let currentPage = 1;
+  let activeResults = [...DATA];
+  let activeTerm = '';
+
+  const $ = id => document.getElementById(id);
   const input = $('search-input'), grid = $('art-grid'), title = $('section-title'), count = $('result-count');
   const clear = $('clear-search'), status = $('search-status'), empty = $('empty-state'), suggestions = $('suggestions');
-
-  const normalize = (s) => String(s ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const paintIcons = () => document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = ICONS[el.dataset.icon] || '');
-
-  function searchableText(item) {
-    return normalize([
-      item.title,
-      item.artist,
-      item.note,
-      ...(item.tags || [])
-    ].join(' '));
-  }
+  const normalize = s => String(s ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const paintIcons = () => document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML=ICONS[el.dataset.icon] || '');
 
   function searchMatches(item, term) {
-    const query = normalize(term).split(/\s+/).filter(Boolean);
-    if (!query.length) return true;
-    const hay = searchableText(item);
-    return query.every(word => hay.includes(word));
+    const q = normalize(term).split(/\s+/).filter(Boolean);
+    if (!q.length) return true;
+    const hay = normalize([item.title,item.artist,item.note,...(item.tags||[])].join(' '));
+    return q.every(word => hay.includes(word));
   }
 
-  function render(items, term = '') {
-    grid.innerHTML = '';
-    empty.classList.toggle('hidden', items.length !== 0);
+  function renderPagination(total) {
+    const old = document.getElementById('pagination');
+    if (old) old.remove();
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const nav = document.createElement('div');
+    nav.id='pagination'; nav.className='mt-8 flex flex-wrap items-center justify-center gap-2';
+    const button = (label, disabled, handler, icon='') => {
+      const b=document.createElement('button'); b.type='button'; b.disabled=disabled;
+      b.className='h-9 min-w-9 px-3 rounded-full bg-[#2b2d31] text-[#dbdee1] ring-1 ring-[#3b3d44] hover:bg-[#35373c] disabled:opacity-35 disabled:cursor-not-allowed';
+      b.innerHTML=icon?`<span class="icon w-4 h-4">${ICONS[icon]}</span>`:label; b.onclick=handler; nav.appendChild(b);
+    };
+    button('Prev',currentPage===1,()=>goPage(currentPage-1),'chevronLeft');
+    const start=Math.max(1,currentPage-2), end=Math.min(pages,start+4);
+    for(let p=start;p<=end;p++){
+      const b=document.createElement('button'); b.type='button'; b.textContent=p;
+      b.className=`h-9 min-w-9 px-3 rounded-full ring-1 ring-[#3b3d44] ${p===currentPage?'bg-[#5865f2] text-white':'bg-[#2b2d31] text-[#dbdee1] hover:bg-[#35373c]'}`;
+      b.onclick=()=>goPage(p); nav.appendChild(b);
+    }
+    button('Next',currentPage===pages,()=>goPage(currentPage+1),'chevronRight');
+    const wrap=document.querySelector('.px-4.sm\\:px-6.pb-16') || document.querySelector('main .px-4');
+    (wrap||grid.parentElement).appendChild(nav);
+  }
 
-    items.forEach((item) => {
-      const media = item.image
-        ? `<button class="art-image-wrap block w-full text-left" type="button" aria-label="Preview ${escapeHtml(item.title)}">
-             <img class="art-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)} by ${escapeHtml(item.artist)}" loading="lazy" referrerpolicy="no-referrer">
-             <span class="source-badge">NEWGROUNDS</span>
-             <span class="art-overlay"><span class="icon h-5 w-5 text-white" data-icon="eye"></span></span>
-           </button>`
-        : `<a class="no-image" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">
-             <div class="no-image-inner"><span class="icon w-8 h-8 text-[#8ea1ff]" data-icon="external"></span><strong>Open artwork</strong><small>Newgrounds page</small></div>
-             <span class="source-badge">NEWGROUNDS</span>
-           </a>`;
+  function goPage(page){
+    currentPage=page; renderPage(); window.scrollTo({top:0,behavior:'smooth'});
+  }
 
-      const card = document.createElement('article');
-      card.className = 'art-card';
-      card.innerHTML = `${media}
-        <div class="p-4">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <h3 class="font-bold text-white text-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3>
-          </div>
-          <div class="text-xs text-[#b5bac1] mb-2">by ${escapeHtml(item.artist)}</div>
-          <p class="text-xs text-[#949ba4] leading-5 mb-3">${escapeHtml(item.note)}</p>
-          <div class="flex flex-wrap gap-1.5 mb-3">${(item.tags || []).map(tag => `<span class="bg-[#383a40] text-[10px] text-[#b5bac1] px-2 py-0.5 rounded">${escapeHtml(tag)}</span>`).join('')}</div>
-          <a class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8ea1ff] hover:text-white" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">
-            View on Newgrounds <span class="icon w-3.5 h-3.5" data-icon="external"></span>
-          </a>
-        </div>`;
-
-      if (item.image) {
-        card.querySelector('button').addEventListener('click', () => openLightbox(item));
-      }
+  function renderPage(){
+    grid.innerHTML='';
+    const pages=Math.max(1,Math.ceil(activeResults.length/PAGE_SIZE));
+    currentPage=Math.min(currentPage,pages);
+    const start=(currentPage-1)*PAGE_SIZE;
+    const visible=activeResults.slice(start,start+PAGE_SIZE);
+    empty.classList.toggle('hidden',activeResults.length!==0);
+    visible.forEach((item)=>{
+      const media=item.image
+        ? `<button class="art-image-wrap block w-full text-left" type="button" aria-label="Preview ${escapeHtml(item.title)}"><img class="art-image" src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)} by ${escapeHtml(item.artist)}" loading="lazy" referrerpolicy="no-referrer"><span class="source-badge">NEWGROUNDS</span><span class="art-overlay"><span class="icon h-5 w-5 text-white" data-icon="eye"></span></span></button>`
+        : `<a class="no-image" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer"><div class="no-image-inner"><span class="icon w-8 h-8 text-[#8ea1ff]" data-icon="external"></span><strong>Open artwork</strong><small>Newgrounds page</small></div><span class="source-badge">NEWGROUNDS</span></a>`;
+      const card=document.createElement('article'); card.className='art-card';
+      card.innerHTML=`${media}<div class="p-4"><h3 class="font-bold text-white text-sm truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h3><div class="text-xs text-[#b5bac1] mb-2 mt-1">by ${escapeHtml(item.artist)}</div><p class="text-xs text-[#949ba4] leading-5 mb-3">${escapeHtml(item.note)}</p><div class="flex flex-wrap gap-1.5 mb-3">${(item.tags||[]).map(t=>`<span class="bg-[#383a40] text-[10px] text-[#b5bac1] px-2 py-0.5 rounded">${escapeHtml(t)}</span>`).join('')}</div><a class="inline-flex items-center gap-1.5 text-xs font-bold text-[#8ea1ff] hover:text-white" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">View on Newgrounds <span class="icon w-3.5 h-3.5" data-icon="external"></span></a></div>`;
+      if(item.image) card.querySelector('button').onclick=()=>openLightbox(item);
       grid.appendChild(card);
     });
-
-    title.textContent = term ? `Clyde results for “${term}”` : 'Verified Clyde artworks from Newgrounds';
-    count.textContent = `${items.length} result${items.length === 1 ? '' : 's'}`;
-    clear.classList.toggle('hidden', !term);
-    paintIcons();
+    title.textContent=activeTerm?`Clyde results for “${activeTerm}”`:'Verified Clyde artworks from Newgrounds';
+    count.textContent=`${activeResults.length} result${activeResults.length===1?'':'s'} · page ${currentPage} of ${pages}`;
+    clear.classList.toggle('hidden',!activeTerm);
+    paintIcons(); renderPagination(activeResults.length);
   }
 
-  function openLightbox(item) {
-    $('lightbox-img').src = item.image;
-    $('lightbox-img').alt = item.title;
-    $('lightbox-caption').innerHTML = `<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open source page ↗</a>`;
-    $('lightbox').classList.remove('hidden');
-    $('lightbox').classList.add('flex');
-  }
+  function openLightbox(item){$('lightbox-img').src=item.image;$('lightbox-img').alt=item.title;$('lightbox-caption').innerHTML=`<strong>${escapeHtml(item.title)}</strong> — ${escapeHtml(item.artist)}<br><a class="text-[#8ea1ff] hover:underline" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open source page ↗</a>`;$('lightbox').classList.remove('hidden');$('lightbox').classList.add('flex');}
+  function closeLightbox(){$('lightbox').classList.add('hidden');$('lightbox').classList.remove('flex');$('lightbox-img').src='';}
+  function runSearch(term){activeTerm=term.trim();activeResults=DATA.filter(item=>searchMatches(item,activeTerm));currentPage=1;renderPage();updateStatus(activeTerm);if(!activeResults.length){suggestions.innerHTML=['furry Clyde','anthro Clyde','Clyde Discord','Clyde fanart'].map(s=>`<button class="suggestion" type="button" data-suggest="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');suggestions.querySelectorAll('[data-suggest]').forEach(b=>b.onclick=()=>{input.value=b.dataset.suggest;runSearch(b.dataset.suggest)});}else suggestions.innerHTML='';}
+  function updateStatus(term=''){status.innerHTML=term?`Searching the verified Clyde index from <strong>Newgrounds</strong>.`:`Source: <strong>Newgrounds</strong>. Mature-labeled artwork is not previewed here and remains on the original source page.`;}
 
-  function closeLightbox() {
-    $('lightbox').classList.add('hidden');
-    $('lightbox').classList.remove('flex');
-    $('lightbox-img').src = '';
-  }
-
-  function updateStatus(term = '') {
-    status.innerHTML = term
-      ? `Searching the verified Clyde index from <strong>Newgrounds</strong>.`
-      : `Source: <strong>Newgrounds</strong>. This page uses a curated index so results stay relevant to Clyde.`;
-  }
-
-  $('search-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const term = input.value.trim();
-    const results = DATA.filter(item => searchMatches(item, term));
-    render(results, term);
-    updateStatus(term);
-    if (!results.length) {
-      suggestions.innerHTML = ['furry Clyde','anthro Clyde','Clyde Discord','Clyde fanart'].map(s => `<button class="suggestion" type="button" data-suggest="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('');
-      suggestions.querySelectorAll('[data-suggest]').forEach(btn => btn.addEventListener('click', () => {
-        input.value = btn.dataset.suggest;
-        $('search-form').requestSubmit();
-      }));
-    } else {
-      suggestions.innerHTML = '';
-    }
-  });
-
-  clear.addEventListener('click', () => {
-    input.value = '';
-    status.textContent = '';
-    suggestions.innerHTML = '';
-    render(DATA);
-    updateStatus();
-  });
-
-  document.querySelectorAll('[data-category]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
-      btn.classList.add('active');
-      const term = btn.dataset.category || '';
-      input.value = term;
-      render(DATA.filter(item => searchMatches(item, term)), term);
-      updateStatus(term);
-    });
-  });
-
-  $('lightbox').addEventListener('click', event => {
-    if (event.target === $('lightbox')) closeLightbox();
-  });
-  $('lightbox-close').addEventListener('click', closeLightbox);
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeLightbox();
-  });
-
-  paintIcons();
-  render(DATA);
-  updateStatus();
+  $('search-form').addEventListener('submit',e=>{e.preventDefault();runSearch(input.value);});
+  clear.addEventListener('click',()=>{input.value='';activeTerm='';activeResults=[...DATA];currentPage=1;renderPage();updateStatus();});
+  document.querySelectorAll('[data-category]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));btn.classList.add('active');input.value=btn.dataset.category||'';runSearch(btn.dataset.category||'');}));
+  $('lightbox').addEventListener('click',e=>{if(e.target===$('lightbox'))closeLightbox();}); $('lightbox-close').addEventListener('click',closeLightbox); document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+  paintIcons(); renderPage(); updateStatus();
 })();
